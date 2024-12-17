@@ -1,65 +1,51 @@
-# envoy-extproc-test
+# Envoy WebSocket ext_proc test server
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+This project consists of three components:
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+- Envoy config to route WebSocket traffic through an ext_proc filter
+- A gRPC server implementing the ext_proc contract that will reject any messages sent on the WS stream
+- A mock WebSockets ticker server
 
-## Running the application in dev mode
+## Running the server
 
-You can run your application in dev mode that enables live coding using:
+The ext_proc server runs on port 9000.
 
-```shell script
+```shell 
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+## Running the WebSocket server
 
-## Packaging and running the application
+The server runs on port 4545.
 
-The application can be packaged using:
+```shell
+cd mock-server
+python -m venv venv/ 
+. venv/bin/activate 
+pip install -r requirements.txt
 
-```shell script
-./mvnw package
+python server.py
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+## Running Envoy
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
+This configures Envoy to run on port 8888
 
-If you want to build an _über-jar_, execute the following command:
+I have been running envoy with [`func-e`](http://func-e.io).
+Once that is installed:
 
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
+```shell
+cd envoy-config
+func-e run -c websocket-extproc.yaml -l debug
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+## Calling the server
 
-## Creating a native executable
+I've been using `wscat`, which is cURL for WebSockets.
 
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
+```shell 
+npm install -g wscat
+wscat -c ws://localhost:8888
 ```
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/envoy-extproc-test-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Related Guides
-
-
-## Provided Code
-
-### gRPC
-
-Create your first gRPC service
-
-[Related guide section...](https://quarkus.io/guides/grpc-getting-started)
+Observe the tick messages - but try sending anything and you'll be evicted.
